@@ -1,0 +1,72 @@
+library(data.table)
+library(dplyr)
+
+##Reading training data
+
+XTrain <- read.table("UCI HAR Dataset/train/X_train.txt", header = FALSE)
+YTrain <- read.table("UCI HAR Dataset/train/y_train.txt", header = FALSE)
+subjectTrain <- read.table("UCI HAR Dataset/train/subject_train.txt", header = FALSE)
+
+##Reading test data
+
+XTest <- read.table("UCI HAR Dataset/test/X_test.txt", header = FALSE)
+YTest <- read.table("UCI HAR Dataset/test/y_test.txt", header = FALSE)
+subjectTest <- read.table("UCI HAR Dataset/test/subject_test.txt", header = FALSE)
+
+##Reading features and activity
+features <- read.table("UCI HAR Dataset/features.txt", header = FALSE)
+activity<- read.table("UCI HAR Dataset/activity_labels.txt", header = FALSE)
+
+##Question 1
+##Merges test data and train data to create one data set
+subject <- rbind(subjectTrain, subjectTest)
+features <- rbind(XTrain, XTest)
+activity <- rbind(YTrain, YTest)
+fullDataSet <- cbind(features,activity,subject)## Creating full data set
+
+
+##Question 2
+## Extracts only the measurements on the mean and standard deviation for each measurement. 
+
+meanAndStd <- grep(".*Mean.*|.*Std.*", names(fullDataSet), ignore.case=TRUE) ##extracting cols with mean and STD
+validColumns <- c(meanAndStd, 562, 563)
+requiredData <- fullDataSet[,validColumns]
+
+
+##Question 3
+##Uses descriptive activity names to name the activities in the data set
+
+requiredData$Activity <- as.character(requiredData$Activity)
+for (i in 1:6){
+    requiredData$Activity[requiredData$Activity == i] <- as.character(activityLabels[i,2])
+}
+
+#activity.labels <- read.table('./UCI HAR Dataset/activity_labels.txt', header = FALSE)
+#activity.labels <- as.character(activity.labels[,2])
+#data.sub$activity <- activity.labels[data.sub$activity]
+
+##Question 4 Appropriately labels the data set with descriptive variable names. 
+
+names(extractedData)<-gsub("Acc", "Accelerometer", names(extractedData))
+names(extractedData)<-gsub("Gyro", "Gyroscope", names(extractedData))
+names(extractedData)<-gsub("BodyBody", "Body", names(extractedData))
+names(extractedData)<-gsub("Mag", "Magnitude", names(extractedData))
+names(extractedData)<-gsub("^t", "Time", names(extractedData))
+names(extractedData)<-gsub("^f", "Frequency", names(extractedData))
+names(extractedData)<-gsub("tBody", "TimeBody", names(extractedData))
+names(extractedData)<-gsub("-mean()", "Mean", names(extractedData), ignore.case = TRUE)
+names(extractedData)<-gsub("-std()", "STD", names(extractedData), ignore.case = TRUE)
+names(extractedData)<-gsub("-freq()", "Frequency", names(extractedData), ignore.case = TRUE)
+names(extractedData)<-gsub("angle", "Angle", names(extractedData))
+names(extractedData)<-gsub("gravity", "Gravity", names(extractedData))
+
+
+##Question 5 From the data set in step 4, creates a second, independent tidy data set 
+##with the average of each variable for each activity and each subject.
+
+data.tidy <- aggregate(data.sub[,3:81], by = list(activity = data.sub$activity, subject = data.sub$subject),FUN = mean)
+write.table(x = data.tidy, file = "data_tidy.txt", row.names = FALSE)
+
+
+
+
